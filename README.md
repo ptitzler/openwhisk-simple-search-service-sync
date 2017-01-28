@@ -39,7 +39,6 @@ $ wsk list
 Entities in namespace: default
 packages
 /ptitzler_org_dev/npsCloudant                                          private
-/ptitzler_org_dev/srcCloudant                                          private
 actions
 /ptitzler_org_dev/synchNPSIndex                                        private nodejs:6
 triggers
