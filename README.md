@@ -8,6 +8,13 @@
 
 ### Setup
 
+* Clone this repository
+
+```
+$ git clone https://github.com/ibm-cds-labs/openwhisk-simple-search-service-sync.git
+$ cd openwhisk-simple-search-service-sync
+```
+
 * bind Cloudant package
 ```
 $ wsk package bind /whisk.system/cloudant npsCloudant --param bluemixServiceName nps-cloudplatform-cloudant --param dbname nps-data --param host ***-bluemix.cloudant.com --param overwrite false --param username ***-bluemix --param password ***
