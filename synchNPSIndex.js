@@ -2,8 +2,19 @@
 var openwhisk = require('openwhisk');
 var request = require('request');
 
+/*
+ * Action applies Cloudant database changes to a Simple-Search-Service 
+ * (https://github.com/ibm-cds-labs/simple-search-service).
+ */
 function main(params) {
 
+	// check input
+	if(! isValidInput(params))
+ 	{
+		return ({ok:true, response: 'Ignored payload: ' + JSON.stringify(params)});
+	}
+
+	// Simple-search-service instance API request URL
 	var sss_request_url = 'https://nps-cloudplatform-simple-search-service.mybluemix.net/row';
 	var sss_request_options = {
 		url: sss_request_url,
@@ -24,7 +35,20 @@ function main(params) {
 		                       	includeDoc: true
 		                       }})
 			.then(function(body) {
-				sss_request_options.method = 'POST';
+				if(params.changes[0].rev.startsWith('1-')) {
+					// first document revision - this is an INSERT operation
+					sss_request_options.method = 'POST';	
+				}
+				else {
+					// n-th document revision - this is an UPDATE operation
+					sss_request_options.method = 'PUT';
+					return reject({ok:false, err: 'Index updates are not supported.'});
+					// TODO: To support updates we need to generate the appropriate search
+					// document id
+					// sss_request_options.url = sss_request_options.url + '/'	+ 'TBD';
+				}
+				
+				// asemble payload
 				sss_request_options.form = {
 					offering: body.response.result.data.offering_id || 'undefined',
 					score: body.response.result.data.score || 0,
@@ -48,7 +72,9 @@ function main(params) {
 	  	else {
   			// document was deleted; remove from index
 			sss_request_options.method = 'DELETE';
-			// TODO lookup document ID
+			return reject({ok:false, err: 'Index deletes are not supported.'});
+			// TODO: To support updates we need to generate the appropriate search
+			// document id
 			sss_request_options.url = sss_request_options.url + '/' + 'TBD';
 	   			request(sss_request_options, 
 	   				function(err, response, body) {
@@ -61,3 +87,16 @@ function main(params) {
   		}
   	});
 }
+
+/**
+ * Determines whether action input can be processed.
+ */
+function isValidInput(params) {
+	return((params) && 
+	      (params.hasOwnProperty('id')) &&
+	      (Array.isArray(params.changes)) &&
+	      (params.changes.length > 0) &&
+	      (params.changes[0].hasOwnProperty('rev')) && 
+	      (! params.id.startsWith('_design/')));
+}
+
